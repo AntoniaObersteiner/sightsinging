@@ -25,6 +25,8 @@ function Sheet() {
 	//after how many notes in between must a # be written again (natural after sharp is written as long as the sharp note is still drawn)
 	this.threshhold_sharp_redraw = 3;
 
+	this.allow_repeat = false;
+
 	this.accepted_notes = [0, 1, 2, 4, 5, 6, 7, 9, 11, 12];
 	this.natural_notes = [0, 2, 4, 5, 7, 9, 11, 12];
 	this.drawn_lines = [2, 3, 4, 5, 6, 8, 9, 10, 11, 12];
@@ -327,15 +329,23 @@ Sheet.prototype.read_volume = function () {
 	document.getElementById("sheet_volume_label_text").innerHTML = "" + round(this.volume * 100) + "%";
 }
 Sheet.prototype.play = function (note) {
+	console.log("note: " + note);
 	this.synth.play(
-		this.get_transposed_note_code(note),
+		this.get_transposed_note_midi(note),
 		this.volume,
 		this.delay,
 		this.duration
 	);
 }
 Sheet.prototype.add_note = function () {
-	new_note = random(this.accepted_notes);
+	if (this.allow_repeat) {
+		accepted_notes = this.accepted_notes;
+	} else {
+		accepted_notes = this.accepted_notes.filter(
+			(note) => note != this.notes[this.notes.length - 1]
+		);
+	}
+	new_note = random(accepted_notes);
 	this.notes.push(new_note);
 	this.check_notes_length();
 	return new_note;
