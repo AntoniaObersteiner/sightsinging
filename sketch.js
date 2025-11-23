@@ -26,6 +26,8 @@ function startAudio () {
 	//This won't play until the context has resumed
 	synth.play('A5', .5, 0, 0.2);
 
+	sheet.synth.start();
+
 	loop();
 }
 

@@ -12,6 +12,29 @@ Field.prototype.to_pixels = function (x, y, a = new p5.Vector(0, 0), b = new p5.
 }
 Field.prototype.map = Field.prototype.to_pixels;
 
+function MySynth () {
+	this.osc = new p5.TriOsc();
+	this.env = new p5.Envelope();
+}
+MySynth.prototype.start = function () {
+	this.osc.amp(0);
+	this.osc.start();
+}
+MySynth.prototype.play = function (midi_note, volume, delay, duration) {
+	let freq = midiToFreq(midi_note);
+	this.osc.amp(0);
+	this.osc.freq(freq);
+	this.env.set(
+		// attack
+		.06, volume, 
+		// decay
+		duration, .7 * volume,
+		// release
+		.2, 0
+	);
+	setTimeout(() => this.env.play(this.osc), 1000 * delay);
+}
+
 function Sheet() {
 	//pitches in half-tones:
 	//0 = C0
@@ -39,7 +62,8 @@ function Sheet() {
 	}
 	this.when_full = "step"; //alternative: "jump"
 
-	this.synth = new p5.MonoSynth();
+	this.synth = new MySynth();
+	this.synth.start();
 	this.volume = 1;
 	this.delay = 1;
 	this.duration = 1;
@@ -82,6 +106,12 @@ Sheet.prototype.to_C_major = function (note) {
 	}
 	console.log("note", note, "in octave", octave, "could not be sorted");
 	return null;
+}
+Sheet.prototype.get_note_midi = function (note) {
+	return note + 60;
+}
+Sheet.prototype.get_transposed_note_midi = function (note) {
+	return this.get_note_midi(note + this.transpose);
 }
 Sheet.prototype.get_note_code = function (note) {
 	in_C = this.to_C_major(note);
@@ -239,7 +269,7 @@ Sheet.prototype.isaccepted = function (new_note) {
 	return false;
 }
 Sheet.prototype.accept = function (note) {
-	this.synth.play(this.get_note_code(note));
+	this.synth.play(this.get_note_midi(note));
 	//read the whole array from the page
 	this.read_accepted();
 }
@@ -329,7 +359,6 @@ Sheet.prototype.read_volume = function () {
 	document.getElementById("sheet_volume_label_text").innerHTML = "" + round(this.volume * 100) + "%";
 }
 Sheet.prototype.play = function (note) {
-	console.log("note: " + note);
 	this.synth.play(
 		this.get_transposed_note_midi(note),
 		this.volume,
